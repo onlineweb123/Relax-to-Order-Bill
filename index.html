@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8">
+  <title>Relax to Order</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil&display=swap" rel="stylesheet">
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <style>
+    body {
+      font-family: 'Noto Sans Tamil', sans-serif;
+      background: #e0f7fa;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 650px;
+      margin: auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #00695c;
+      margin-bottom: 20px;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+
+    button {
+      background-color: #00695c;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #004d40;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      table-layout: fixed;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: center;
+      word-wrap: break-word;
+      font-size: 12px;
+    }
+
+    .bill-section {
+      display: none;
+      margin-top: 30px;
+    }
+
+    .petrol-row td {
+      font-weight: bold;
+      color: #e65100;
+    }
+
+    .total-row td {
+      font-weight: bold;
+      font-size: 14px;
+      color: #1b5e20;
+    }
+
+    #billArea {
+      width: 595px;
+      height: 842px;
+      background: #fff;
+      padding: 20px;
+      box-sizing: border-box;
+      border-radius: 10px;
+      overflow: hidden;
+      font-size: 13px;
+    }
+
+    #billArea h2 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    #billArea p {
+      font-size: 12px;
+      margin: 4px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>🛒 Relax to Order</h2>
+
+  <label>பெயர் :</label>
+  <input type="text" id="name" placeholder="பெயர் பதிவு செய்யவும்">
+
+  <label>மொபைல் எண் :</label>
+  <input type="number" id="phone" placeholder="மொபைல் எண் பதிவு செய்யவும்">
+
+  <label>முகவரி :</label>
+  <input type="text" id="address" placeholder="முகவரி பதிவு செய்யவும்">
+
+  <label>⛽ பெட்ரோல் கட்டணம் (₹):</label>
+  <input type="number" id="petrol" value="100">
+
+  <label>பொருள் :</label>
+  <input type="text" id="itemName" placeholder="எ.கா: ஆப்பில்">
+
+  <label>அளவு :</label>
+  <input type="number" id="itemQty" placeholder="எ.கா: 1">
+
+  <label>விலை (₹):</label>
+  <input type="number" id="itemRate" placeholder="எ.கா: 50">
+
+  <button onclick="addItem()">➕ பொருள் சேர்க்க</button>
+
+  <div id="itemList"></div>
+
+  <button onclick="generateBill()">🧾 பில் உருவாக்கு</button>
+
+  <div class="bill-section" id="billSection">
+    <div id="billArea">
+      <h2>🛒 Relax to Order</h2>
+      <p><b>பெயர் :</b> <span id="billName"></span></p>
+      <p><b>மொபைல் :</b> <span id="billPhone"></span></p>
+      <p><b>முகவரி :</b> <span id="billAddress"></span></p>
+      <p><b>தேதி :</b> <span id="billDate"></span></p>
+
+      <table id="billTable">
+        <thead>
+          <tr>
+            <th>பொருள்</th>
+            <th>அளவு</th>
+            <th>விலை</th>
+            <th>மொத்தம்</th>
+          </tr>
+        </thead>
+        <tbody id="billItems"></tbody>
+        <tr class="petrol-row">
+          <td colspan="3">⛽ பெட்ரோல் கட்டணம்</td>
+          <td id="petrolCharge">₹0</td>
+        </tr>
+        <tr class="total-row">
+          <td colspan="3">மொத்தம்</td>
+          <td id="totalAmount">₹0</td>
+        </tr>
+      </table>
+    </div>
+
+    <button id="downloadBtn" style="margin-top:20px;">📥 பில் படமாக தரவிறக்கு</button>
+  </div>
+</div>
+
+<script>
+  let items = [];
+
+  function addItem() {
+    const name = document.getElementById("itemName").value;
+    const qty = parseInt(document.getElementById("itemQty").value);
+    const rate = parseFloat(document.getElementById("itemRate").value);
+
+    if (name && qty > 0 && rate > 0) {
+      items.push({ name, qty, rate });
+      displayItems();
+      document.getElementById("itemName").value = "";
+      document.getElementById("itemQty").value = "";
+      document.getElementById("itemRate").value = "";
+    }
+  }
+
+  function displayItems() {
+    let html = '<table><tr><th>பொருள்</th><th>Qty</th><th>Rate</th><th>Total</th></tr>';
+    items.forEach(item => {
+      html += `<tr><td>${item.name}</td><td>${item.qty}</td><td>₹${item.rate}</td><td>₹${item.qty * item.rate}</td></tr>`;
+    });
+    html += '</table>';
+    document.getElementById("itemList").innerHTML = html;
+  }
+
+  function generateBill() {
+    const name = document.getElementById("name").value;
+    const phone = document.getElementById("phone").value;
+    const address = document.getElementById("address").value;
+    const petrol = parseFloat(document.getElementById("petrol").value);
+    const date = new Date().toLocaleString("en-IN");
+
+    if (!name || !phone || !address || items.length === 0) {
+      alert("அனைத்து தகவலையும் பூர்த்தி செய்யவும்!");
+      return;
+    }
+
+    document.getElementById("billName").innerText = name;
+    document.getElementById("billPhone").innerText = phone;
+    document.getElementById("billAddress").innerText = address;
+    document.getElementById("billDate").innerText = date;
+
+    let total = 0;
+    let billHTML = "";
+    items.forEach(item => {
+      const lineTotal = item.qty * item.rate;
+      billHTML += `<tr><td>${item.name}</td><td>${item.qty}</td><td>₹${item.rate}</td><td>₹${lineTotal}</td></tr>`;
+      total += lineTotal;
+    });
+
+    total += petrol;
+    document.getElementById("billItems").innerHTML = billHTML;
+    document.getElementById("petrolCharge").innerText = `₹${petrol}`;
+    document.getElementById("totalAmount").innerText = `₹${total}`;
+
+    document.getElementById("billSection").style.display = "block";
+  }
+
+  document.getElementById("downloadBtn").addEventListener("click", () => {
+    html2canvas(document.getElementById("billArea"), {
+      scale: 4, // For high resolution (approx 300 DPI)
+      useCORS: true
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = "RelaxToOrder_Bill.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  });
+</script>
+
+</body>
+</html>
